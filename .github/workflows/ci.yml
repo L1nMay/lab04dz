@@ -8,100 +8,32 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [ ubuntu-latest, windows-latest ]
-        compiler:
-          - { name: gcc, command: gcc }
-
-    runs-on: ${{ matrix.os }}
-
-    env:
-      PROJECT_SOURCE_DIR_LINUX: ${{ github.workspace }}/lab04dz/hello_world
-      PROJECT_SOURCE_DIR_WINDOWS: D:\a\lab04dz\lab04dz\lab04dz\hello_world
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Sleep for 5 seconds (Windows workaround)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: Start-Sleep -Seconds 5
-
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 1  # Shallow clone
+          fetch-depth: 1
           lfs: false
           submodules: false
 
-      - name: List files in workspace (Ubuntu)
-        if: runner.os == 'ubuntu-latest'
-        shell: bash
-        run: |
-          echo "Files in ${{ github.workspace }}:"
-          ls -la ${{ github.workspace }}
-          echo "Files in $PROJECT_SOURCE_DIR_LINUX:"
-          ls -la $PROJECT_SOURCE_DIR_LINUX
-
-      - name: List files in workspace (Windows)
-        if: runner.os == 'windows-latest'
-        shell: bash
-        run: |
-          echo "Files in D:\a\lab04dz\lab04dz:"
-          ls -la D:\a\lab04dz\lab04dz
-          echo "Files in $PROJECT_SOURCE_DIR_WINDOWS:"
-          ls -la $PROJECT_SOURCE_DIR_WINDOWS
-
       - name: Set up environment - Ubuntu
-        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y g++
 
-      - name: Set up environment - Visual Studio
-        if: matrix.os == 'windows-latest'
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-          init_bat: true
-
-      - name: Configure CMake (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Configure CMake
         shell: bash
         run: |
-          cmake -S $PROJECT_SOURCE_DIR_LINUX -B $PROJECT_SOURCE_DIR_LINUX/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic"
+          cmake -S ${{ github.workspace }}/lab04dz/hello_world -B ${{ github.workspace }}/lab04dz/hello_world/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic"
 
-      - name: Configure CMake (Windows)
-        if: matrix.os == 'windows-latest'
+      - name: Build
         shell: bash
         run: |
-          cmake -S $PROJECT_SOURCE_DIR_WINDOWS -B $PROJECT_SOURCE_DIR_WINDOWS/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic"
+          cmake --build ${{ github.workspace }}/lab04dz/hello_world/build --config Release
 
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ${{ github.workspace }}/hello_world/build
-          key: ${{ runner.os }}-${{ hashFiles('hello_world/CMakeLists.txt') }}
-
-      - name: Build (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Run Tests
         shell: bash
         run: |
-          cmake --build $PROJECT_SOURCE_DIR_LINUX/build --config Release
-
-      - name: Build (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: bash
-        run: |
-          cmake --build $PROJECT_SOURCE_DIR_WINDOWS/build --config Release
-
-      - name: Run Tests (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
-        shell: bash
-        run: |
-          $PROJECT_SOURCE_DIR_LINUX/build/hello_world
-
-      - name: Run Tests (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: bash
-        run: |
-          $PROJECT_SOURCE_DIR_WINDOWS/build/hello_world
+          ${{ github.workspace }}/lab04dz/hello_world/build/hello_world
