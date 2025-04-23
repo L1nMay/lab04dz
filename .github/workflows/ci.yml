@@ -17,7 +17,8 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     env:
-      PROJECT_SOURCE_DIR: ${{ github.workspace }}/lab04dz/hello_world # Исправленный путь
+      PROJECT_SOURCE_DIR_LINUX: ${{ github.workspace }}/lab04dz/hello_world
+      PROJECT_SOURCE_DIR_WINDOWS: D:\a\lab04dz\lab04dz\lab04dz\hello_world
 
     steps:
       - name: Sleep for 5 seconds (Windows workaround)
@@ -32,13 +33,23 @@ jobs:
           lfs: false
           submodules: false
 
-      - name: List files in workspace
+      - name: List files in workspace (Ubuntu)
+        if: runner.os == 'ubuntu-latest'
         shell: bash
         run: |
           echo "Files in ${{ github.workspace }}:"
           ls -la ${{ github.workspace }}
-          echo "Files in $PROJECT_SOURCE_DIR:"
-          ls -la $PROJECT_SOURCE_DIR
+          echo "Files in $PROJECT_SOURCE_DIR_LINUX:"
+          ls -la $PROJECT_SOURCE_DIR_LINUX
+
+      - name: List files in workspace (Windows)
+        if: runner.os == 'windows-latest'
+        shell: bash
+        run: |
+          echo "Files in D:\a\lab04dz\lab04dz:"
+          ls -la D:\a\lab04dz\lab04dz
+          echo "Files in $PROJECT_SOURCE_DIR_WINDOWS:"
+          ls -la $PROJECT_SOURCE_DIR_WINDOWS
 
       - name: Set up environment - Ubuntu
         if: matrix.os == 'ubuntu-latest'
@@ -53,10 +64,17 @@ jobs:
           arch: x64
           init_bat: true
 
-      - name: Configure CMake
+      - name: Configure CMake (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-          cmake -S $PROJECT_SOURCE_DIR -B $PROJECT_SOURCE_DIR/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic"
+          cmake -S $PROJECT_SOURCE_DIR_LINUX -B $PROJECT_SOURCE_DIR_LINUX/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic"
+
+      - name: Configure CMake (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          cmake -S $PROJECT_SOURCE_DIR_WINDOWS -B $PROJECT_SOURCE_DIR_WINDOWS/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic"
 
       - name: Cache dependencies
         uses: actions/cache@v3
@@ -64,12 +82,26 @@ jobs:
           path: ${{ github.workspace }}/hello_world/build
           key: ${{ runner.os }}-${{ hashFiles('hello_world/CMakeLists.txt') }}
 
-      - name: Build
+      - name: Build (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-          cmake --build $PROJECT_SOURCE_DIR/build --config Release
+          cmake --build $PROJECT_SOURCE_DIR_LINUX/build --config Release
 
-      - name: Run Tests
+      - name: Build (Windows)
+        if: matrix.os == 'windows-latest'
         shell: bash
         run: |
-          $PROJECT_SOURCE_DIR/build/hello_world
+          cmake --build $PROJECT_SOURCE_DIR_WINDOWS/build --config Release
+
+      - name: Run Tests (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          $PROJECT_SOURCE_DIR_LINUX/build/hello_world
+
+      - name: Run Tests (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          $PROJECT_SOURCE_DIR_WINDOWS/build/hello_world
